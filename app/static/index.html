@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/static/style.css">
+<title>ПФ Учёт</title>
+</head>
+<body>
+<header>
+  <div class="hdr-top">
+    <h1>ПФ Учёт</h1>
+    <div class="hdr-user">
+      <span id="whoami"></span>
+      <button id="logout-btn">Выйти</button>
+    </div>
+  </div>
+  <nav id="tabs">
+    <button data-tab="snapshot" class="active">Остатки</button>
+    <button data-tab="reports" data-admin-view>Отчёты</button>
+    <button data-tab="analytics" data-admin-view>Аналитика</button>
+    <button data-tab="cards">Техкарты</button>
+    <button data-tab="calc">Калькулятор</button>
+    <button data-tab="admin" data-admin-only hidden>Админ</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ОСТАТКИ -->
+  <section id="tab-snapshot">
+    <div class="segmented" id="event-type">
+      <button data-type="stocktake" class="active">Остаток</button>
+      <button data-type="intake">Приход</button>
+      <button data-type="writeoff">Списание</button>
+    </div>
+    <p class="hint" id="event-hint">Заполни фактические остатки на конец смены.</p>
+    <div id="snapshot-list"></div>
+    <input id="event-note" placeholder="Комментарий (опц.)" class="full-input">
+    <button id="submit-snapshot" class="primary">Отправить</button>
+    <div id="snapshot-status" class="status"></div>
+  </section>
+
+  <!-- ОТЧЁТЫ -->
+  <section id="tab-reports" hidden>
+    <div id="reports-list"></div>
+    <div id="report-detail"></div>
+  </section>
+
+  <!-- АНАЛИТИКА -->
+  <section id="tab-analytics" hidden>
+    <div class="accordion-item open" data-key="history">
+      <button class="accordion-head" onclick="toggleAccordion('history')">
+        <span>История движений</span><span class="chev">▾</span>
+      </button>
+      <div class="accordion-body" id="history-list"></div>
+    </div>
+
+    <div class="accordion-item" data-key="weeks">
+      <button class="accordion-head" onclick="toggleAccordion('weeks')">
+        <span>Недельные срезы</span><span class="chev">▾</span>
+      </button>
+      <div class="accordion-body">
+        <div id="week-accordion"></div>
+      </div>
+    </div>
+
+    <div class="accordion-item" data-key="months">
+      <button class="accordion-head" onclick="toggleAccordion('months')">
+        <span>Месячные срезы</span><span class="chev">▾</span>
+      </button>
+      <div class="accordion-body">
+        <div id="month-accordion"></div>
+      </div>
+    </div>
+
+    <div class="accordion-item" data-key="alert">
+      <button class="accordion-head" onclick="toggleAccordion('alert')">
+        <span>⚠ Низкий остаток</span><span class="chev">▾</span>
+      </button>
+      <div class="accordion-body" id="low-alert"></div>
+    </div>
+  </section>
+
+  <!-- ТЕХКАРТЫ -->
+  <section id="tab-cards" hidden>
+    <div class="search-wrap">
+      <input id="cards-search" class="search-input"
+             placeholder="Начни вводить название техкарты…" autocomplete="off">
+    </div>
+    <div id="cards-empty" class="hint" style="text-align:center;padding:20px 0">
+      Введи название для поиска
+    </div>
+    <div id="cards-list"></div>
+  </section>
+
+  <!-- КАЛЬКУЛЯТОР -->
+  <section id="tab-calc" hidden>
+    <div id="calc-list-view">
+      <div class="search-wrap">
+        <input id="calc-search" class="search-input"
+               placeholder="Поиск техкарты…" autocomplete="off">
+      </div>
+      <div id="calc-cards"></div>
+      <button id="calc-new-btn" class="fab" data-admin-only hidden title="Добавить техкарту">✎</button>
+    </div>
+
+    <div id="calc-detail-view" hidden>
+      <div class="detail-head">
+        <button id="calc-back" class="back-btn">← Назад</button>
+        <button id="calc-edit-btn" class="icon-btn" hidden title="Редактировать">✎</button>
+      </div>
+      <h2 id="calc-name"></h2>
+      <p class="hint" id="calc-note"></p>
+
+      <label class="row">
+        <span>Нужно получить</span>
+        <input type="number" step="0.01" id="calc-needed" value="1" min="0">
+      </label>
+      <p class="hint">В тех же единицах, что в техкарте (обычно литры).</p>
+
+      <table id="calc-table">
+        <thead><tr><th>Ингредиент</th><th>На порцию</th><th>Итого</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint">
+        Формула: ОКРВНИЗ((НУЖНО / СУММА_НА_ПОРЦИЮ) × ИНГР_НА_ПОРЦИЮ × 1000 ; 5) — в мл.
+      </p>
+    </div>
+  </section>
+
+  <!-- АДМИН -->
+  <section id="tab-admin" hidden>
+    <h2>Продукты</h2>
+    <div id="admin-products"></div>
+    <h3>Добавить продукт</h3>
+    <form id="add-product">
+      <input name="name" placeholder="Название" required>
+      <input name="unit" placeholder="Ед. изм." value="шт">
+      <input name="ref_qty" type="number" step="0.01" placeholder="Эталон" value="0">
+      <label class="toggle-row">
+        <span>Учитывать в остатках</span>
+        <span class="toggle">
+          <input type="checkbox" name="track_stock" checked>
+          <span class="slider"></span>
+        </span>
+      </label>
+      <button type="submit" class="primary">Добавить</button>
+    </form>
+    <p class="hint">Сними галочку для ингредиентов, которые нужны только в техкартах.</p>
+
+    <h2>Техкарты</h2>
+    <div id="admin-techcards"></div>
+    <button id="add-techcard-btn" class="primary">+ Новая техкарта</button>
+
+    <h2>Время утреннего отчёта</h2>
+    <div class="row">
+      <span>Пн–Пт</span>
+      <b id="disp-weekday">—</b>
+      <button onclick="openTimeModal('weekday')">Изменить</button>
+    </div>
+    <div class="row">
+      <span>Сб–Вс</span>
+      <b id="disp-weekend">—</b>
+      <button onclick="openTimeModal('weekend')">Изменить</button>
+    </div>
+
+    <h2>Пользователи</h2>
+    <div id="users-list"></div>
+    <h3>Добавить пользователя</h3>
+    <form id="add-user">
+      <input name="username" placeholder="Логин" required>
+      <input name="password" type="password" placeholder="Пароль" required>
+      <select name="role">
+        <option value="line">Линейный</option>
+        <option value="admin">Админ</option>
+      </select>
+      <button type="submit" class="primary">Добавить</button>
+    </form>
+  </section>
+</main>
+
+<div id="modal-backdrop" hidden>
+  <div id="modal" class="modal"></div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
